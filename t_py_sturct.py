@@ -30,12 +30,14 @@ while True:
         print struct.calcsize(fmt)
         print 'fmt = %s, len = %d' % (fmt, struct.calcsize(fmt))
         xxx = struct.unpack(fmt, data)
-        print xxx
+        for v in xxx:
+            print repr(v)
+            print '\n'
 
         curdir = os.getcwd()
-        bcdso = curdir + '/bcd.dll'
+        bcdso = curdir + '//bcd.dll'
         try:
-            libBcd = windll.LoadLibrary(bcdso)
+            libBcd = ctypes.cdll.LoadLibrary(bcdso)
         except (TypeError, ValueError):
             print "Error"
             exit
