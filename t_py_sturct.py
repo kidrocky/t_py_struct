@@ -1,6 +1,7 @@
 __author__ = 'Administrator'
 
 from socket import *
+from time import ctime
 import struct
 from ctypes import *
 import os
@@ -8,10 +9,10 @@ import os
 HOST = ''
 PORT = 21567
 BUFSIZ = 1024
-ADDR = (HOST, PORT)
+ADDR = (HOST,PORT)
+fmt = '!hBB8s8s10s8sBBBhhi5s5s8s4s3sc'
 
-fmt = '!hccs8s8s10s8ccchhis5s5s8s4s3c'
-
+business = create_string_buffer('\000', 32)
 tcpServSock = socket(AF_INET, SOCK_STREAM)
 tcpServSock.bind(ADDR)
 tcpServSock.listen(5)
@@ -27,23 +28,12 @@ while True:
             break
 
         print len(data)
-        print struct.calcsize(fmt)
         print 'fmt = %s, len = %d' % (fmt, struct.calcsize(fmt))
         xxx = struct.unpack(fmt, data)
-        for v in xxx:
-            print repr(v)
-            print '\n'
+        print xxx
 
-        curdir = os.getcwd()
-        bcdso = curdir + '//bcd.dll'
-        try:
-            libBcd = ctypes.cdll.LoadLibrary(bcdso)
-        except (TypeError, ValueError):
-            print "Error"
-            exit
-
-        business = ''
-        libBcd.iBcdToAsc(xxx[3], business, 16)
-        print business
+        libbcd = cdll.LoadLibrary('bcd.so')
+        libbcd.iBcdToAsc(xxx[3], byref(business), 8)
+        print repr(business.value)
 
 tcpServSock.close()
