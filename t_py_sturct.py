@@ -1,8 +1,6 @@
 __author__ = 'Administrator'
 
-
 from socket import *
-from time import ctime
 import struct
 from ctypes import *
 import os
@@ -10,7 +8,7 @@ import os
 HOST = ''
 PORT = 21567
 BUFSIZ = 1024
-ADDR = (HOST,PORT)
+ADDR = (HOST, PORT)
 
 fmt = '!hccs8s8s10s8ccchhis5s5s8s4s3c'
 
@@ -30,13 +28,20 @@ while True:
 
         print len(data)
         print struct.calcsize(fmt)
-        print repr(data)
-        (magic, spno, rpno, busi,) = struct.unpack(fmt, data)
-        print busi
+        print 'fmt = %s, len = %d' % (fmt, struct.calcsize(fmt))
+        xxx = struct.unpack(fmt, data)
+        print xxx
 
-        libBcd = cdll.LoadLibrary(os.getcwd() + '/bcd.so')
-        libbcd.iBcdToAsc(busi, business, 16)
+        curdir = os.getcwd()
+        bcdso = curdir + '/bcd.dll'
+        try:
+            libBcd = windll.LoadLibrary(bcdso)
+        except (TypeError, ValueError):
+            print "Error"
+            exit
+
+        business = ''
+        libBcd.iBcdToAsc(xxx[3], business, 16)
         print business
 
-tcpCliSock.close()
 tcpServSock.close()
