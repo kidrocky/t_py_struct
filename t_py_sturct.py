@@ -34,6 +34,7 @@ while True:
 
         libbcd = cdll.LoadLibrary('bcd.so')
         libbcd.iBcdToAsc(xxx[3], byref(business), 8)
+
         print repr(business.value)
 
 tcpServSock.close()
