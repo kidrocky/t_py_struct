@@ -1,12 +1,12 @@
 # coding=utf-8
 
 __author__ = 'Administrator'
+import string
 
 define_dict = {}
 struct_dict = {}
-struct_flag = 0
-type_dict = dict(BYTE = "B", UINT8 = "s", INT8 = "s", WORD = "h", WORD16 = "h", UINT16 = "h", INT16 = "h", WORD32 = "i",
-                 UINT32 = "i", INT32 = "i")
+type_dict = {'BYTE': "B", 'UINT8': "s", 'INT8': "s", 'WORD': "h", 'WORD16': "h", 'UINT16': "h", 'INT16': "h",
+             'WORD32': "i", 'UINT32': "i", 'INT32': "i"}
 
 
 def parseDefine(line):
@@ -28,6 +28,8 @@ def readFile(fname):
     :param fname: 头文件名，全路径
     """
     structcontent = ""
+    struct_flag = 0
+
     try:
         fd = open(fname, "r", 0)
         for line in fd:
@@ -51,7 +53,7 @@ def readFile(fname):
                     structcontent += line
                     parseStruct(structcontent)
 
-                if struct_flag == 1:
+                if 1 == struct_flag:
                     structcontent += line
 
         fd.close()
@@ -62,34 +64,84 @@ def readFile(fname):
 def parseStruct(structcontent):
     """
     读取头文件中struct定义，存入结构定义字典
-    :param fname: 头文件名，全路径
+    :param structcontent:
     """
     if structcontent == "":
         return
 
-    for line in structcontent:
+    tmp_dict = {}
+    lines = structcontent.split('\n')
+    for line in lines:
+        idx = line.index('typedef')
+        if idx >= 0:
+            continue
+
+        idx = line.index('}')
+        if idx >= 0:
+            structname = line.split('}').replace(' ', '')
+            struct_dict[structname] = tmp_dict
+            break
+
+        # 去掉;号后面部分的注释
+        line = line[:line.index(';')]
+        line_list = line.split()
+        fieldtype = line_list[0]
+        fieldname = line_list[1][:line_list[1].index('[')]
+        fieldlen_str = line[line.index('[') + 1:line.index(']')]
+        fieldlen = CalcFieldLen(fieldlen_str)
+        tmp_dict[fieldtype] = [fieldname, fieldlen]
 
 
-    def createConf(fname):
-        """
+def CalcFieldLen(fieldlen_str):
+    """
+
+    :param fieldlen_str:
+    :return:
+    """
+    len_define = 0
+    len_int = 0
+    if fieldlen_str == "":
+        return -1
+
+    for item in fieldlen_str.split():
+        if item in define_dict:
+            len_define = define_dict[item]
+            continue
+
+        try:
+            len_int = string.atoi(item)
+        except ValueError:
+            len_int = 0
+
+    return len_define + len_int
+
+
+def createConf(fname):
+    """
     生成每个结构体的struct模块format定义
     :param fname: 生成的fmt配置文件名
     """
+    try:
+        fd = open(fname, "w", 0)
+        fd.close()
+    except IOError:
+        pass
 
 
-    def main():
-        """
+def main():
+    """
     main函数
     """
-        fname = raw_input('Please Input Head Filename:')
-        print 'Filename is: %s' % fname
+    fname = raw_input('Please Input Head Filename:')
+    print 'Filename is: %s' % fname
 
-        readFile(fname)
+    # 分析头文件
+    readFile(fname)
 
-        confname = 'zimpay_struct_fmt.conf'
-        createConf(confname)
+    # 写头文件解析结果
+    confname = 'zimpay_struct_fmt.conf'
+    createConf(confname)
 
 
-    if __name__ == '__main__':
-        main()
-
+if __name__ == '__main__':
+    main()
