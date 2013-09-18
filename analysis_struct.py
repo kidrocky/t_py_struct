@@ -5,8 +5,19 @@ import string
 
 define_dict = {}
 struct_dict = {}
-type_dict = {'BYTE': "B", 'UINT8': "s", 'INT8': "s", 'WORD': "h", 'WORD16': "h", 'UINT16': "h", 'INT16': "h",
-             'WORD32': "i", 'UINT32': "i", 'INT32': "i"}
+type_dict = {'BYTE': {'len': 1, 's_type': "B"},
+             'UINT8': {'len': 1, 's_type': "s"},
+             'INT8': {'len': 1, 's_type': "s"},
+             'WORD': {'len': 2, 's_type': "h"},
+             'WORD16': {'len': 2, 's_type': "h"},
+             'UINT16': {'len': 2, 's_type': "h"},
+             'INT16': {'len': 2, 's_type': "h"},
+             'WORD32': {'len': 4, 's_type': "i"},
+             'UINT32': {'len': 4, 's_type': "i"},
+             'INT32': {'len': 4, 's_type': "i"},
+             'time_t': {'len': 4, 's_type': "i"},
+             'PID': {'len': 5, 's_type': "i"}
+}
 
 
 def parseDefine(line):
@@ -18,7 +29,10 @@ def parseDefine(line):
     if line == "":
         return
 
-    tmp = line.split
+    tmp = line.split()
+    if len(tmp) < 3:
+        return
+
     define_dict[tmp[1]] = tmp[2]
 
 
@@ -36,28 +50,47 @@ def readFile(fname):
             if line == "":
                 continue
 
-            idx = line.index("#define")
+            try:
+                idx = line.index("#define")
+            except ValueError:
+                idx = -1
+
             if idx >= 0:
                 parseDefine(line)
             else:
                 # 去空格
                 tmp = line.replace(' ', '')
-                idx = tmp.index("typedefstruct")
+
+                try:
+                    idx = tmp.index("typedefstruct")
+                except ValueError:
+                    idx = -1
+
                 if idx >= 0:
                     struct_flag = 1
                     structcontent += line
+                    continue
 
-                idx = line.index('}')
+                try:
+                    idx = line.index('}')
+                except ValueError:
+                    idx = -1
+
                 if idx >= 0:
+                    if struct_flag == 0:
+                        continue
+
                     struct_flag = 0
                     structcontent += line
                     parseStruct(structcontent)
+                    break
 
                 if 1 == struct_flag:
                     structcontent += line
 
         fd.close()
     except IOError:
+        fd.close()
         pass
 
 
@@ -72,24 +105,50 @@ def parseStruct(structcontent):
     tmp_dict = {}
     lines = structcontent.split('\n')
     for line in lines:
-        idx = line.index('typedef')
+        try:
+            idx = line.index('typedef')
+        except ValueError:
+            idx = -1
+
         if idx >= 0:
             continue
 
-        idx = line.index('}')
-        if idx >= 0:
-            structname = line.split('}').replace(' ', '')
-            struct_dict[structname] = tmp_dict
-            break
+        if line == '{':
+            continue
 
-        # 去掉;号后面部分的注释
-        line = line[:line.index(';')]
-        line_list = line.split()
-        fieldtype = line_list[0]
-        fieldname = line_list[1][:line_list[1].index('[')]
-        fieldlen_str = line[line.index('[') + 1:line.index(']')]
-        fieldlen = CalcFieldLen(fieldlen_str)
-        tmp_dict[fieldtype] = [fieldname, fieldlen]
+        try:
+            idx = line.index('}')
+            if idx >= 0:
+                structname = line.split('}').replace(' ', '')
+                struct_dict[structname] = tmp_dict
+                break
+        except:
+            # 去掉;号后面部分的注释
+            line = line[:line.index(';')]
+            line_list = line.split()
+            fieldtype = line_list[0]
+            fieldtype = fieldtype.replace(' ','')
+
+            try:
+                idx = line.index('[')
+                if idx >= 0:
+                    #字符串
+                    fieldname = line_list[1][:line_list[1].index('[')]
+                    fieldlen_str = line[line.index('[') + 1:line.index(']')]
+                    fieldlen = CalcFieldLen(fieldlen_str)
+            except:
+                pass
+
+            #直接从type_dict中获取长度
+            try:
+                if type_dict.has_key(fieldtype):
+                    fieldlen = type_dict[fieldtype]['len']
+
+                fieldname = line_list[1]
+            except NameError:
+                continue
+
+            tmp_dict[fieldtype] = [fieldname, fieldlen]
 
 
 def CalcFieldLen(fieldlen_str):
@@ -100,6 +159,7 @@ def CalcFieldLen(fieldlen_str):
     """
     len_define = 0
     len_int = 0
+    result = 0
     if fieldlen_str == "":
         return -1
 
@@ -113,7 +173,8 @@ def CalcFieldLen(fieldlen_str):
         except ValueError:
             len_int = 0
 
-    return len_define + len_int
+    result = len_define + len_int
+    return result
 
 
 def createConf(fname):
