@@ -1,10 +1,8 @@
 __author__ = 'Administrator'
 
 from socket import *
-from time import ctime
 import struct
 from ctypes import *
-import os
 
 HOST = ''
 PORT = 21567
