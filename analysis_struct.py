@@ -83,7 +83,7 @@ def readFile(fname):
 
                     struct_flag = 0
                     structcontent += line
-                    funcname = 'parse' + type_name
+                    funcname = 'parse_' + type_name
                     parsefunc = getattr(funcname)
                     parsefunc(structcontent)
                     break
@@ -96,8 +96,16 @@ def readFile(fname):
         fd.close()
         pass
 
+def parse_enum(structcontent):
+    """
+    解析枚举
+    """
 
-def parseStruct(structcontent):
+    pass
+
+
+
+def parse_struct(structcontent):
     """
     读取头文件中struct定义，存入结构定义字典
     :param structcontent:
