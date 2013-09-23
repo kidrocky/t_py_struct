@@ -68,6 +68,7 @@ def readFile(fname):
 
                 if idx >= 0:
                     struct_flag = 1
+                    # 获取是enum还是struct
                     type_name = line.split()[1]
                     structcontent += line
                     continue
@@ -85,7 +86,9 @@ def readFile(fname):
                     structcontent += line
                     funcname = 'parse_' + type_name
                     parsefunc = getattr(funcname)
-                    parsefunc(structcontent)
+                    if callable(parsefunc):
+                        parsefunc(structcontent)
+
                     break
 
                 if 1 == struct_flag:
