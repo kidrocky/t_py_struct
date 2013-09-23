@@ -62,12 +62,13 @@ def readFile(fname):
                 tmp = line.replace(' ', '')
 
                 try:
-                    idx = tmp.index("typedefstruct")
+                    idx = tmp.index("typedef")
                 except ValueError:
                     idx = -1
 
                 if idx >= 0:
                     struct_flag = 1
+                    type_name = line.split()[1]
                     structcontent += line
                     continue
 
@@ -82,7 +83,9 @@ def readFile(fname):
 
                     struct_flag = 0
                     structcontent += line
-                    parseStruct(structcontent)
+                    funcname = 'parse' + type_name
+                    parsefunc = getattr(funcname)
+                    parsefunc(structcontent)
                     break
 
                 if 1 == struct_flag:
