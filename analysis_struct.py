@@ -46,6 +46,7 @@ def readFile(fname):
     global fd, structcontent
     type_name = ""
     struct_flag = 0
+    structcontent = ""
 
     try:
         fd = open(fname, "r", 0)
@@ -56,25 +57,24 @@ def readFile(fname):
             #解析define
             try:
                 idx = line.index("#define")
+                if idx >= 0:
+                    parseDefine(line)
+                    continue
             except ValueError:
-                idx = -1
-
-            if idx >= 0:
-                parseDefine(line)
-                continue
+                pass
 
             #解析enum，struct
             try:
                 # 判断结构体开始
                 idx = line.index("typedef")
-                if not idx < 0:
+                if idx >= 0:
                     struct_flag = 1
                     # 获取是enum还是struct
                     type_name = line.split()[1].replace(' ', '')
                     structcontent += line
                     continue
             except ValueError:
-                if not 1 == struct_flag:
+                if 1 != struct_flag:
                     continue
 
             structcontent += line
@@ -114,6 +114,7 @@ def parse_enum(structcontent):
             idx = line.index('}')
             if idx >= 0:
                 structname = line.split('}')[1].replace(' ', '')
+                structname = structname[:structname.index(';')]
                 # enum 固定为整数，4位长
                 type_dict[structname] = {'len': 4, 's_type': "i"}
                 break
