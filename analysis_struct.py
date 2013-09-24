@@ -33,8 +33,21 @@ def parseDefine(line):
     tmp = line.split()
     if len(tmp) < 3:
         return
+    elif len(tmp) == 3:
+        define_dict[tmp[1]] = tmp[2]
+    else:
+        length = 0
+        for definename in content:
+            if definename in define_dict.keys():
+                length += define_dict[definename]
+            else:
+                try:
+                    x = string.atoi(definename)
+                    length += x
+                except ValueError:
+                    continue
 
-    define_dict[tmp[1]] = tmp[2]
+            define_dict[tmp[1]] = length
 
 
 def readFile(fname):
@@ -182,6 +195,7 @@ def parse_struct(structcontent):
 
                     fieldname = line_list[1]
                 except NameError:
+                    print NameError.message
                     continue
 
             tmp_dict[fieldname] = {'type': fieldtype, 'len': fieldlen}
