@@ -43,9 +43,8 @@ def readFile(fname):
     :rtype : NULL
     :param fname: 头文件名，全路径
     """
-    global fd
+    global fd, structcontent
     type_name = ""
-    structcontent = ""
     struct_flag = 0
 
     try:
@@ -54,7 +53,7 @@ def readFile(fname):
             if line == "":
                 continue
 
-            #解析defile
+            #解析define
             try:
                 idx = line.index("#define")
             except ValueError:
@@ -67,35 +66,34 @@ def readFile(fname):
             #解析enum，struct
             try:
                 idx = line.index("typedef")
+                if not idx < 0:
+                    struct_flag = 1
+                    # 获取是enum还是struct
+                    type_name = line.split()[1].replace(' ', '')
+                    structcontent += line
+                    continue
             except ValueError:
-                continue
+                if not 1 == struct_flag:
+                    continue
 
-            if idx >= 0:
-                struct_flag = 1
-                # 获取是enum还是struct
-                type_name = line.split()[1].replace(' ', '')
-                structcontent += line
-                continue
+            structcontent += line
 
-            if 1 == struct_flag:
-                structcontent += line
-
+            # 判断结构体是否结束
             try:
                 idx = line.index('}')
+                if idx >= 0:
+                    if struct_flag == 0:
+                        continue
+                    else:
+                        struct_flag = 0
+
+                    structcontent += line
+                    if type_name == 'enum':
+                        parse_enum(structcontent)
+                    elif type_name == 'struct':
+                        parse_struct(structcontent)
             except ValueError:
                 continue
-
-            if idx >= 0:
-                if struct_flag == 0:
-                    continue
-                else:
-                    struct_flag = 0
-
-                structcontent += line
-                if type_name == 'enum':
-                    parse_enum(structcontent)
-                elif type_name == 'struct':
-                    parse_struct(structcontent)
 
         fd.close()
     except IOError:
