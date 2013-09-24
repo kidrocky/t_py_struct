@@ -71,6 +71,7 @@ def readFile(fname):
                     struct_flag = 1
                     # 获取是enum还是struct
                     type_name = line.split()[1].replace(' ', '')
+                    structcontent = ""
                     structcontent += line
                     continue
             except ValueError:
@@ -133,6 +134,7 @@ def parse_struct(structcontent):
         return
 
     tmp_dict = {}
+    fieldlen = 0
     lines = structcontent.split('\n')
     for line in lines:
         try:
@@ -149,7 +151,8 @@ def parse_struct(structcontent):
         try:
             idx = line.index('}')
             if idx >= 0:
-                structname = line.split('}').replace(' ', '')
+                structname = line.split('}')[1].replace(' ', '')
+                structname = structname[:structname.index(';')]
                 struct_dict[structname] = tmp_dict
                 break
         except ValueError:
@@ -181,7 +184,7 @@ def parse_struct(structcontent):
                 except NameError:
                     continue
 
-            tmp_dict[fieldtype] = [fieldname, fieldlen]
+            tmp_dict[fieldname] = {'type': fieldtype, 'len': fieldlen}
 
 
 def CalcFieldLen(fieldlen_str):
@@ -197,16 +200,17 @@ def CalcFieldLen(fieldlen_str):
 
     for item in fieldlen_str.split():
         if item in define_dict:
-            len_define = define_dict[item]
-            continue
+            try:
+                len_define = string.atoi(define_dict[item])
+            except ValueError:
+                continue
 
         try:
             len_int = string.atoi(item)
         except ValueError:
             len_int = 0
 
-    result = len_define + len_int
-    return result
+    return len_define + len_int
 
 
 def createConf(fname):
