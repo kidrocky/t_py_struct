@@ -73,7 +73,7 @@ def readFile(fname):
             if idx >= 0:
                 struct_flag = 1
                 # 获取是enum还是struct
-                type_name = line.split()[1]
+                type_name = line.split()[1].replace(' ', '')
                 structcontent += line
                 continue
 
@@ -117,7 +117,7 @@ def parse_enum(structcontent):
                 type_dict[structname] = 4
                 break
         except ValueError:
-            pass
+            continue
 
 
 def parse_struct(structcontent):
