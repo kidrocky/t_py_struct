@@ -2,6 +2,8 @@
 
 __author__ = 'Administrator'
 import string
+import sys
+import os
 
 define_dict = {}
 struct_dict = {}
@@ -39,8 +41,10 @@ def parseDefine(line):
 def readFile(fname):
     """
     读取头文件中的宏定义，存入宏定义字典
+    :rtype : NULL
     :param fname: 头文件名，全路径
     """
+    type_name = ""
     structcontent = ""
     struct_flag = 0
 
@@ -50,6 +54,7 @@ def readFile(fname):
             if line == "":
                 continue
 
+            #解析defile
             try:
                 idx = line.index("#define")
             except ValueError:
@@ -57,60 +62,68 @@ def readFile(fname):
 
             if idx >= 0:
                 parseDefine(line)
-            else:
-                # 去空格
-                tmp = line.replace(' ', '')
+                continue
 
-                try:
-                    idx = tmp.index("typedef")
-                except ValueError:
-                    idx = -1
+            #解析enum，struct
+            try:
+                idx = line.index("typedef")
+            except ValueError:
+                continue
 
-                if idx >= 0:
-                    struct_flag = 1
-                    # 获取是enum还是struct
-                    type_name = line.split()[1]
-                    structcontent += line
+            if idx >= 0:
+                struct_flag = 1
+                # 获取是enum还是struct
+                type_name = line.split()[1]
+                structcontent += line
+                continue
+
+            if 1 == struct_flag:
+                structcontent += line
+
+            try:
+                idx = line.index('}')
+            except ValueError:
+                continue
+
+            if idx >= 0:
+                if struct_flag == 0:
                     continue
-
-                try:
-                    idx = line.index('}')
-                except ValueError:
-                    idx = -1
-
-                if idx >= 0:
-                    if struct_flag == 0:
-                        continue
-
+                else:
                     struct_flag = 0
-                    structcontent += line
-                    funcname = 'parse_' + type_name
-                    parsefunc = getattr(funcname)
-                    if callable(parsefunc):
-                        parsefunc(structcontent)
 
-                    break
-
-                if 1 == struct_flag:
-                    structcontent += line
+                structcontent += line
+                if type_name == 'enum':
+                    parse_enum(structcontent)
+                elif type_name == 'struct':
+                    parse_struct(structcontent)
 
         fd.close()
     except IOError:
         fd.close()
         pass
 
+
 def parse_enum(structcontent):
     """
     解析枚举
+    :param structcontent:
     """
-
-    pass
-
+    lines = structcontent.split('\n')
+    for line in lines:
+        try:
+            idx = line.index('}')
+            if idx >= 0:
+                structname = line.split('}')[1].replace(' ', '')
+                type_dict[structname] = 4
+                break
+        except ValueError:
+            pass
 
 
 def parse_struct(structcontent):
     """
     读取头文件中struct定义，存入结构定义字典
+    :rtype : NULL
     :param structcontent:
     """
     if structcontent == "":
@@ -141,7 +154,7 @@ def parse_struct(structcontent):
             line = line[:line.index(';')]
             line_list = line.split()
             fieldtype = line_list[0]
-            fieldtype = fieldtype.replace(' ','')
+            fieldtype = fieldtype.replace(' ', '')
 
             try:
                 idx = line.index('[')
@@ -209,6 +222,10 @@ def main():
     """
     fname = raw_input('Please Input Head Filename:')
     print 'Filename is: %s' % fname
+
+    # 初始化
+    cur_path = os.getcwd()
+    sys.path.append(cur_path)
 
     # 分析头文件
     readFile(fname)
