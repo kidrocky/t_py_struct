@@ -18,7 +18,7 @@ type_dict = {'BYTE': {'len': 1, 's_type': "B"},
              'UINT32': {'len': 4, 's_type': "i"},
              'INT32': {'len': 4, 's_type': "i"},
              'time_t': {'len': 4, 's_type': "i"},
-             'PID': {'len': 5, 's_type': "i"}}
+             'PID': {'len': 5, 's_type': "sBBB"}}
 
 
 def parseDefine(line):
@@ -65,6 +65,7 @@ def readFile(fname):
 
             #解析enum，struct
             try:
+                # 判断结构体开始
                 idx = line.index("typedef")
                 if not idx < 0:
                     struct_flag = 1
@@ -78,7 +79,7 @@ def readFile(fname):
 
             structcontent += line
 
-            # 判断结构体是否结束
+            # 判断结构体结束
             try:
                 idx = line.index('}')
                 if idx >= 0:
@@ -113,7 +114,8 @@ def parse_enum(structcontent):
             idx = line.index('}')
             if idx >= 0:
                 structname = line.split('}')[1].replace(' ', '')
-                type_dict[structname] = 4
+                # enum 固定为整数，4位长
+                type_dict[structname] = {'len': 4, 's_type': "i"}
                 break
         except ValueError:
             continue
