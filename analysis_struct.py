@@ -18,8 +18,7 @@ type_dict = {'BYTE': {'len': 1, 's_type': "B"},
              'UINT32': {'len': 4, 's_type': "i"},
              'INT32': {'len': 4, 's_type': "i"},
              'time_t': {'len': 4, 's_type': "i"},
-             'PID': {'len': 5, 's_type': "i"}
-}
+             'PID': {'len': 5, 's_type': "i"}}
 
 
 def parseDefine(line):
@@ -44,6 +43,7 @@ def readFile(fname):
     :rtype : NULL
     :param fname: 头文件名，全路径
     """
+    global fd
     type_name = ""
     structcontent = ""
     struct_flag = 0
@@ -106,6 +106,7 @@ def readFile(fname):
 def parse_enum(structcontent):
     """
     解析枚举
+    :rtype : object
     :param structcontent:
     """
     lines = structcontent.split('\n')
@@ -126,6 +127,7 @@ def parse_struct(structcontent):
     :rtype : NULL
     :param structcontent:
     """
+    global fieldlen
     if structcontent == "":
         return
 
@@ -149,31 +151,34 @@ def parse_struct(structcontent):
                 structname = line.split('}').replace(' ', '')
                 struct_dict[structname] = tmp_dict
                 break
-        except:
+        except ValueError:
             # 去掉;号后面部分的注释
             line = line[:line.index(';')]
+
+            #解析
             line_list = line.split()
             fieldtype = line_list[0]
             fieldtype = fieldtype.replace(' ', '')
 
             try:
                 idx = line.index('[')
-                if idx >= 0:
-                    #字符串
-                    fieldname = line_list[1][:line_list[1].index('[')]
-                    fieldlen_str = line[line.index('[') + 1:line.index(']')]
-                    fieldlen = CalcFieldLen(fieldlen_str)
-            except:
+            except ValueError:
                 pass
 
-            #直接从type_dict中获取长度
-            try:
-                if type_dict.has_key(fieldtype):
-                    fieldlen = type_dict[fieldtype]['len']
+            if idx >= 0:
+                #字符串
+                fieldname = line_list[1][:line_list[1].index('[')]
+                fieldlen_str = line[line.index('[') + 1:line.index(']')]
+                fieldlen = CalcFieldLen(fieldlen_str)
+            else:
+                #直接从type_dict中获取长度
+                try:
+                    if fieldtype in type_dict.keys():
+                        fieldlen = type_dict[fieldtype]['len']
 
-                fieldname = line_list[1]
-            except NameError:
-                continue
+                    fieldname = line_list[1]
+                except NameError:
+                    continue
 
             tmp_dict[fieldtype] = [fieldname, fieldlen]
 
@@ -186,7 +191,6 @@ def CalcFieldLen(fieldlen_str):
     """
     len_define = 0
     len_int = 0
-    result = 0
     if fieldlen_str == "":
         return -1
 
