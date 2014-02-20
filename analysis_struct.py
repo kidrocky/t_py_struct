@@ -252,6 +252,7 @@ def main():
 
     # 分析头文件
     readFile(fname)
+    
 
     # 写头文件解析结果
     confname = 'zimpay_struct_fmt.conf'
